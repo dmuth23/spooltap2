@@ -1,0 +1,21 @@
+{
+  "domain": "spooltap",
+  "name": "SpoolTap",
+  "codeowners": [
+    "@dmuth23"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "frontend",
+    "lovelace",
+    "persistent_notification",
+    "tag"
+  ],
+  "documentation": "https://github.com/dmuth23/spooltap2",
+  "integration_type": "hub",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/dmuth23/spooltap2/issues",
+  "requirements": [],
+  "single_config_entry": true,
+  "version": "0.2.3"
+}

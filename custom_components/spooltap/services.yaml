@@ -1,0 +1,259 @@
+resolve_tag:
+  name: Resolve tag
+  description: Resolve a scanned tag UID to a Bambuddy spool (native matcher).
+  fields:
+    tag_uid:
+      name: Tag UID
+      description: The full HA tag_id (pass the whole value; Bambuddy canonicalizes).
+      required: true
+      example: "3f9edf83a1b2c3d4e5f684bbab53cf0f6e27"
+      selector:
+        text:
+
+bind_tag:
+  name: Bind tag
+  description: Bind (link) a tag UID to a spool. Errors 409 if the tag is on another active spool (use recycle_tag).
+  fields:
+    spool_id:
+      name: Spool ID
+      required: true
+      example: 5
+      selector:
+        number:
+          mode: box
+          min: 1
+    tag_uid:
+      name: Tag UID
+      description: The full HA tag_id.
+      required: true
+      selector:
+        text:
+
+recycle_tag:
+  name: Recycle tag
+  description: Move a tag to a target spool, unbinding it from its current active spool first if needed.
+  fields:
+    tag_uid:
+      name: Tag UID
+      required: true
+      selector:
+        text:
+    target_spool_id:
+      name: Target spool ID
+      required: true
+      selector:
+        number:
+          mode: box
+          min: 1
+    source_spool_id:
+      name: Source spool ID
+      description: Optional; auto-resolved from the tag if omitted.
+      selector:
+        number:
+          mode: box
+          min: 1
+
+create_spool:
+  name: Create spool
+  description: Create a new native Bambuddy spool (only material is required).
+  fields:
+    material:
+      name: Material
+      required: true
+      example: PLA
+      selector:
+        text:
+    color_name:
+      name: Color name
+      selector:
+        text:
+    brand:
+      name: Brand
+      selector:
+        text:
+    category:
+      name: Category
+      selector:
+        text:
+    tag_uid:
+      name: Tag UID
+      description: Optionally bind a tag at creation.
+      selector:
+        text:
+    label_weight:
+      name: Label weight (g)
+      selector:
+        number:
+          mode: box
+          min: 0
+    note:
+      name: Note
+      selector:
+        text:
+
+assign_slot:
+  name: Assign slot
+  description: Assign a spool to a printer / AMS / tray slot (relocates it off any prior slot first; Bambuddy pushes the profile to the printer).
+  fields:
+    spool_id:
+      name: Spool ID
+      required: true
+      selector:
+        number:
+          mode: box
+          min: 1
+    printer_id:
+      name: Printer ID
+      description: Optional; defaults to the printer auto-derived from Bambuddy.
+      example: 1
+      selector:
+        number:
+          mode: box
+          min: 0
+    ams_id:
+      name: AMS ID
+      required: true
+      selector:
+        number:
+          mode: box
+          min: 0
+    tray_id:
+      name: Tray ID
+      required: true
+      selector:
+        number:
+          mode: box
+          min: 0
+
+unassign_slot:
+  name: Unassign slot
+  description: Remove the assignment on a printer / AMS / tray slot.
+  fields:
+    printer_id:
+      name: Printer ID
+      description: Optional; defaults to the printer auto-derived from Bambuddy.
+      selector:
+        number:
+          mode: box
+          min: 0
+    ams_id:
+      name: AMS ID
+      required: true
+      selector:
+        number:
+          mode: box
+          min: 0
+    tray_id:
+      name: Tray ID
+      required: true
+      selector:
+        number:
+          mode: box
+          min: 0
+
+modify_spool:
+  name: Modify spool
+  description: Update a spool's color name, material, or used weight. Sending weight_used locks the weight against Bambuddy's coarse AMS remain% sync (per-print tracking continues); send weight_locked false to unlock.
+  fields:
+    spool_id:
+      name: Spool ID
+      required: true
+      selector:
+        number:
+          mode: box
+          min: 1
+    color_name:
+      name: Color name
+      selector:
+        text:
+    material:
+      name: Material
+      selector:
+        text:
+    weight_used:
+      name: Weight used (g)
+      description: Net grams consumed (label weight minus remaining filament).
+      selector:
+        number:
+          mode: box
+          min: 0
+    weight_locked:
+      name: Weight locked
+      description: Explicitly lock/unlock the weight against Bambuddy's AMS remain% sync.
+      selector:
+        boolean:
+
+weigh_spool:
+  name: Weigh spool (recertify)
+  description: Recertify a spool from a gross scale reading. Bambuddy does the tare math (gross minus core weight), corrects in both directions, and stamps the weigh-in time; the weight is then locked so the AMS remain% sync can't overwrite the certified value (per-print tracking continues).
+  fields:
+    spool_id:
+      name: Spool ID
+      required: true
+      selector:
+        number:
+          mode: box
+          min: 1
+    gross_grams:
+      name: Gross weight (g)
+      description: The raw scale reading, spool core included.
+      required: true
+      selector:
+        number:
+          mode: box
+          min: 0
+
+archive_spool:
+  name: Archive spool
+  description: Soft-delete (archive) a spool.
+  fields:
+    spool_id:
+      name: Spool ID
+      required: true
+      selector:
+        number:
+          mode: box
+          min: 1
+
+refresh:
+  name: Refresh
+  description: Poll Bambuddy now and update all SpoolTap sensors.
+
+bind_slot_tag:
+  name: Bind slot tag
+  description: Register an NFC tag as a SLOT tag (stored in the HA-owned slot→tag registry; one tag per slot). Omit the tag to clear the slot's registration.
+  fields:
+    slot_key:
+      name: Slot key
+      description: "The slot's key as '<ams>_<tray>', e.g. 0_1 (external feed: 255_0)."
+      required: true
+      example: "0_1"
+      selector:
+        text:
+    tag_uid:
+      name: Tag UID
+      description: The full HA tag_id (stored canonicalized). Empty clears the slot.
+      selector:
+        text:
+
+clear_slot_tag:
+  name: Clear slot tag
+  description: Remove a slot's registered NFC tag from the slot→tag registry.
+  fields:
+    slot_key:
+      name: Slot key
+      required: true
+      example: "0_1"
+      selector:
+        text:
+
+install_dashboard:
+  name: Install dashboard
+  description: (Re)create the auto-installed SpoolTap dashboard. Without force it only creates the dashboard when missing; with force it overwrites the layout with the shipped one.
+  fields:
+    force:
+      name: Force
+      description: Overwrite the existing dashboard layout with the shipped one.
+      default: false
+      selector:
+        boolean:

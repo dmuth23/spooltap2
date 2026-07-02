@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+
+# local working docs — live in the spooltap2-dev repo, not here
+CLAUDE.md
+STATE.md

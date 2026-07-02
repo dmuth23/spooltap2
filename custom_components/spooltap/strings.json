@@ -1,0 +1,20 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "SpoolTap (Bambuddy)",
+        "description": "Connect to your Bambuddy instance.",
+        "data": {
+          "host": "Bambuddy URL",
+          "api_token": "API key (optional)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to Bambuddy at that URL."
+    },
+    "abort": {
+      "already_configured": "This Bambuddy is already configured."
+    }
+  }
+}
