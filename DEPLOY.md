@@ -54,12 +54,50 @@ the Bambuddy source — so this is confirmation, not discovery.)
 ## Weight recertification (the Modify workflow)
 
 The Modify form loads the spool's current values — check **Remaining** against your scale
-first; if it matches, there's nothing to fix. To recertify: type the **gross** scale reading
-and **Save**. Bambuddy does the tare math (gross − core), records `last_weighed_at`, and the
-weight is locked against Bambuddy's coarse AMS remain% sync (which is increase-only and would
-clobber downward corrections); Bambuddy's precise per-print tracker keeps deducting regardless,
-so tracking continues from the certified value. Never run Bambuddy's *"sync AMS weights"*
-recovery tool after a recertify — it force-overwrites from remain% in both directions.
+first; if it matches, there's nothing to fix. To recertify: put the spool on the scale, type
+the reading into the **Gross** box, and **Save**.
+
+**What Save does** (`flows.py` → `async_mod_save`): with a gross > 0 it calls `weigh_spool(gross)`
+then `modify_spool(weight_locked=True)` — weigh-and-lock in one step. Bambuddy computes
+`net = gross − core_weight` and `weight_used = label_weight − net` (Remaining is derived, never
+stored), corrects in **both** directions (a spool heavier than tracked *lowers* `weight_used`),
+and stamps `last_scale_weight` + `last_weighed_at`. The SpoolBuddy hardware pad runs the same
+math — it only tares the empty pad; the backend still subtracts the spool's core weight.
+
+**Only two inputs can lie to you.** Everything is `Remaining = gross − core_weight`, so accuracy
+rides entirely on the spool's **core weight** (the empty-spool tare — pulled from a per-brand
+catalog, *not* a measurement of your spool) and its **label weight** (is it really a 1 kg spool?).
+If a Remaining reads obviously wrong, the tare is off → fix **Empty Spool Weight in Bambuddy's
+Inventory UI, then re-weigh**. ⚠ The Modify form's own core field is **display-only** — it only
+previews `net` on screen; `weigh_spool` sends just the gross and BB recomputes with its *stored*
+core weight, so editing the form's core changes nothing about the committed value.
+
+**Gross box, not Net box.** Always use **Gross** (the scale reading, spool included). The Net box
+is only for when you already know remaining and aren't weighing — typing a gross number there
+commits `weight_used = label − gross` (badly inflated) and auto-locks it.
+
+**"Reset usage" is not a step.** In local (De-Spoolman) mode nothing zeros `weight_used`. The only
+reset — `POST /spools/{id}/reset-consumed-counter` (formerly the misnamed `/reset-usage`) — just
+stamps `weight_used_baseline = weight_used` to zero the cosmetic "Total Consumed" widget; Remaining,
+`weight_used`, and `weight_locked` are untouched. So there is **nothing to reset before a weigh-in**
+(weighing overwrites `weight_used` regardless); run it *after* only if that widget bothers you.
+(`weight_used → 0` exists only in the Spoolman backend, which V2 does not use.)
+
+**What the lock protects.** `weight_locked=true` makes **both** of BB's coarse remain%-based writers
+skip the spool: the automatic MQTT AMS sync (`main.py`, increase-only, never mid-print) **and** the
+manual "Sync AMS weights" recovery tool (`inventory.py` → `POST /sync-ams-weights`). BB's precise
+per-print 3MF tracker **ignores** the lock and keeps deducting real grams, so tracking continues
+from the certified value.
+
+> **Correction, verified against BB source (`inventory.py:1692`, 2026-07-04):** earlier guidance
+> said *"never run the Sync AMS weights tool after a recertify — it force-overwrites from remain% in
+> both directions."* That tool **skips `weight_locked` spools**, and a recertify locks the spool — so
+> a recertified spool is safe from it. It overwrites (both directions, bypassing the only-increase
+> guard) **only for unlocked, assigned** spools.
+
+**Reconciliation marker.** Each weigh stamps `last_weighed_at`. After a full weigh-pass, any *active*
+spool still showing `last_weighed_at = null` is one you never physically handled → an archive
+shortlist candidate.
 
 ---
 
