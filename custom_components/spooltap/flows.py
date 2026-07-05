@@ -280,7 +280,7 @@ class SpoolTapFlows:
             self._mod_load(spool_id)
             self.status = f"Opened spool #{spool_id} in Modify — edit below, then Save."
         else:
-            self.status = f"⚠️ Tag …{tag[-8:]} isn't bound to anything — switch to Bind mode to register it."
+            self.status = f"Tag …{tag[-8:]} isn't bound to anything — switch to Bind mode to register it."
         self._notify()
 
     # ------------------------------------------------------------ pending timer
@@ -302,7 +302,7 @@ class SpoolTapFlows:
         self._pending_timer = None
         self.pending_slot_key = None
         self.assign_result = "Idle"
-        self.status = "⏱ Armed slot timed out (5 min) — re-scan the slot tag to start over."
+        self.status = "Armed slot timed out (5 min) — re-scan the slot tag to start over."
         self._notify()
 
     def _clear_pending(self) -> None:
@@ -329,13 +329,13 @@ class SpoolTapFlows:
             _LOGGER.warning("manual assign failed: %s", err)
             self.assign_result = "Failed"
             self.status = (
-                "⚠️ Assign failed — Bambuddy rejected it or is unreachable. Fix and retry."
+                "Assign failed — Bambuddy rejected it or is unreachable. Fix and retry."
             )
             self._notify()
             return
         self.assign_result = "Success"
         self.status = (
-            f"✅ Spool #{spool_id} → {disp}. The tray auto-configures when the printer is online."
+            f"Spool #{spool_id} → {disp}. The tray auto-configures when the printer is online."
         )
         self._clear_pending()
         self._notify()
@@ -348,7 +348,7 @@ class SpoolTapFlows:
         spool_id = await self.coordinator.resolve_tag_fresh(tag)
         if spool_id is None or slot is None:
             self.status = (
-                "⚠️ Unknown spool tag — bind it first (Bind mode). "
+                "Unknown spool tag — bind it first (Bind mode). "
                 "The slot is still armed: re-scan a spool, or Cancel."
             )
             self._notify()
@@ -363,14 +363,14 @@ class SpoolTapFlows:
             _LOGGER.warning("tap assign failed: %s", err)
             self.assign_result = "Failed"
             self.status = (
-                "⚠️ Assign failed — Bambuddy rejected it or is unreachable. "
+                "Assign failed — Bambuddy rejected it or is unreachable. "
                 "The slot is still armed: fix and re-scan, or Cancel."
             )
             self._notify()
             return
         self.assign_result = "Success"
         self.status = (
-            f"✅ {display} (#{spool_id}) → {slot['label']}. The tray auto-configures when the printer is online."
+            f"{display} (#{spool_id}) → {slot['label']}. The tray auto-configures when the printer is online."
         )
         self._clear_pending()
         self._notify()
@@ -413,13 +413,13 @@ class SpoolTapFlows:
         if spool_id > 0:
             tgt = f"spool #{spool_id}"
             if role == "slot":
-                warn = f"  ⚠️ that tag is registered to {detail} — binding it to a spool is blocked"
+                warn = f"  that tag is registered to {detail} — binding it to a spool is blocked"
             elif role == "spool":
-                warn = f"  ⚠️ already on {detail}; Bind will move it here"
+                warn = f"  already on {detail}; Bind will move it here"
         elif slot is not None:
             tgt = slot["label"]
             if role == "spool":
-                warn = f"  ⚠️ that tag is on {detail}; recycle it off the spool first"
+                warn = f"  that tag is on {detail}; recycle it off the spool first"
         else:
             tgt = "— pick a spool or a slot below"
         self.status = f"Ready: bind {name} → {tgt}. Press Bind to confirm.{warn}"
@@ -446,7 +446,7 @@ class SpoolTapFlows:
         )
         if slot is not None:
             self.status = (
-                f"⚠️ That tag is registered to {slot['label']} (a slot/tray tag). "
+                f"That tag is registered to {slot['label']} (a slot/tray tag). "
                 "Unbind the slot first, or use a different tag."
             )
             self._notify()
@@ -462,10 +462,10 @@ class SpoolTapFlows:
                 )
         except _BB_ERRORS as err:
             _LOGGER.warning("bind spool failed: %s", err)
-            self.status = f"⚠️ Bind failed — {err}"
+            self.status = f"Bind failed — {err}"
             self._notify()
             return
-        self.status = f"✅ Tag …{tag[-8:].upper()} bound → spool #{spool_id}."
+        self.status = f"Tag …{tag[-8:].upper()} bound → spool #{spool_id}."
         self.texts["tag_input"] = ""
         self._notify()
 
@@ -482,7 +482,7 @@ class SpoolTapFlows:
         spool_id = self.coordinator.resolve_tag_local(tag)
         if spool_id is not None:
             self.status = (
-                f"⚠️ That tag is bound to spool #{spool_id}. "
+                f"That tag is bound to spool #{spool_id}. "
                 "Recycle it off the spool first, or use a different tag for the slot."
             )
             self._notify()
@@ -497,7 +497,7 @@ class SpoolTapFlows:
         else:
             co.slot_tags.pop(slot["key"], None)
         await co.async_save_slot_tags()
-        self.status = f"✅ Tag …{tag[-8:].upper()} bound → {slot['label']}."
+        self.status = f"Tag …{tag[-8:].upper()} bound → {slot['label']}."
         self.texts["tag_input"] = ""
         self._notify()
 
@@ -551,7 +551,7 @@ class SpoolTapFlows:
         except _BB_ERRORS as err:
             _LOGGER.warning("modify save failed: %s", err)
             await self.coordinator.async_refresh()  # reflect any partial commit
-            self.status = "⚠️ Save failed — Bambuddy rejected it or is unreachable."
+            self.status = "Save failed — Bambuddy rejected it or is unreachable."
             self._notify()
             return
         await self.coordinator.async_refresh()
@@ -563,7 +563,7 @@ class SpoolTapFlows:
             else f" · {int(round(net))}g remaining"
         )
         suffix = f" · {mat}" if mat != "Unknown" else ""
-        self.status = f"✅ Saved #{sid} — {self.texts['mod_name']}{detail}{suffix}"
+        self.status = f"Saved #{sid} — {self.texts['mod_name']}{detail}{suffix}"
         self._notify()
 
     async def async_mod_archive(self) -> None:
@@ -575,12 +575,12 @@ class SpoolTapFlows:
             await self.coordinator.rest.archive_spool(sid)
         except _BB_ERRORS as err:
             _LOGGER.warning("archive failed: %s", err)
-            self.status = "⚠️ Archive failed — Bambuddy rejected it or is unreachable."
+            self.status = "Archive failed — Bambuddy rejected it or is unreachable."
             self._notify()
             return
         await self.coordinator.async_refresh()
         self.loaded_spool_id = 0
-        self.status = f"✅ Archived #{sid} — its tag is free to recycle."
+        self.status = f"Archived #{sid} — its tag is free to recycle."
         self._notify()
 
     async def async_mod_close(self) -> None:

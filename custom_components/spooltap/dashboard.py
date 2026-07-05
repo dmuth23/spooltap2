@@ -98,7 +98,7 @@ _HEADER_CARD = {
     "primary": (
         "{{ states('select.spooltap_mode') }} mode"
         "{% if states('sensor.spooltap_assign_result') == 'Working' %} · working…"
-        "{% elif states('sensor.spooltap_assign_result') == 'Failed' %} · ⚠️ failed"
+        "{% elif states('sensor.spooltap_assign_result') == 'Failed' %} · failed"
         "{% endif %}"
     ),
     "secondary": (
@@ -110,11 +110,11 @@ _HEADER_CARD = {
         "{% set pend = state_attr('sensor.spooltap_assign_result','pending_slot_label') %}"
         "{% set bits = [] %}"
         "{% if role in ['spool','slot'] %}"
-        "{% set bits = bits + ['🏷 in hand: ' ~ (detail or role)] %}"
+        "{% set bits = bits + ['in hand: ' ~ (detail or role)] %}"
         "{% elif role == 'unbound' %}"
-        "{% set bits = bits + ['🏷 in hand: unbound tag'] %}"
+        "{% set bits = bits + ['in hand: unbound tag'] %}"
         "{% endif %}"
-        "{% if pend %}{% set bits = bits + ['📍 armed: ' ~ pend] %}{% endif %}"
+        "{% if pend %}{% set bits = bits + ['armed: ' ~ pend] %}{% endif %}"
         "{% if bits %}\n{{ bits | join('  ·  ') }}{% endif %}"
     ),
     "icon": (
@@ -310,7 +310,7 @@ _BIND_CARDS: list[dict[str, Any]] = [
             "### AMS slot tags — {{ slots|selectattr('tag_uid')|list|count }}/"
             "{{ slots|count }} bound _(layout auto-pulled from Bambuddy)_\n\n"
             "| Slot | Bound | NFC tag |\n|---|:-:|---|\n"
-            "{% for s in slots %}| {{ s.label }} | {{ '✅' if s.tag_uid else '⬜' }} | "
+            "{% for s in slots %}| {{ s.label }} | {{ 'Yes' if s.tag_uid else '—' }} | "
             "{{ (s.tag_uid[-14:] if s.tag_uid else '—') }} |\n{% endfor %}"
         ),
     },
@@ -421,14 +421,14 @@ _SPOOLS_CARDS: list[dict[str, Any]] = [
             "and not s.attributes.get('slicer_filament') %}"
             "{% set ns.rows = ns.rows + [s] %}{% endfor %}"
             "{% if ns.rows %}"
-            "### ⚠️ No filament profile — {{ ns.rows|count }} spools\n"
+            "### No filament profile — {{ ns.rows|count }} spools\n"
             "These spools have no slicer profile linked, so an assign pushes a *generic* "
             "profile to the tray. Fix in Bambuddy: edit the spool → **Filament Profile**.\n\n"
             "| ID | Brand | Mat | Name |\n|--:|---|---|---|\n"
             "{% for s in ns.rows|sort(attribute='attributes.spool_id') %}"
             "| {{ s.attributes.spool_id }} | {{ s.attributes.brand or '—' }} | {{ s.state }} "
             "| {{ s.attributes.color_name or s.name }} |\n{% endfor %}"
-            "{% else %}✅ **Every spool is linked to a filament profile.**{% endif %}"
+            "{% else %}**Every spool is linked to a filament profile.**{% endif %}"
         ),
     },
     {
@@ -443,7 +443,7 @@ _SPOOLS_CARDS: list[dict[str, Any]] = [
             "{% for s in ns.rows|sort(attribute='entity_id') %}| {{ s.attributes.spool_id }} "
             "| {{ s.attributes.color_name or s.name }} | {{ s.state }} | "
             "{{ s.attributes.remaining_grams }}g | "
-            "{{ '🏷️' if s.attributes.get('tag_uid') else '—' }} | "
+            "{{ 'Yes' if s.attributes.get('tag_uid') else '—' }} | "
             "{{ s.attributes.assigned_slot or '—' }} |\n{% endfor %}"
         ),
     },
