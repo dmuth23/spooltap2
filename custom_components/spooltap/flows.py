@@ -189,6 +189,17 @@ class SpoolTapFlows:
     def loaded_spool(self) -> SpoolModel | None:
         return (self.coordinator.data or {}).get(self.loaded_spool_id)
 
+    def _spool_desc(self, spool_id: int) -> str:
+        """'spool #12 (Polymaker Orange PLA, 612g left)' — name + weight so the
+        physical spool in hand can be checked against what the scan resolved to."""
+        spool = (self.coordinator.data or {}).get(spool_id)
+        if spool is None:
+            return f"spool #{spool_id}"
+        return (
+            f"spool #{spool_id} ({spool.display_name},"
+            f" {round(spool.remaining_grams)}g left)"
+        )
+
     def _role_for_tag(self, tag: str) -> tuple[str, str]:
         """Classify an ARBITRARY tag: role none/slot/spool/unbound + a human detail
         (spool wins over slot). The tag-in-hand sensor and the bind preview share this so
@@ -201,7 +212,7 @@ class SpoolTapFlows:
             role, detail = "slot", slot["label"]
         for spool_id, model in (self.coordinator.data or {}).items():
             if model.tag_uid and canonical_tag(model.tag_uid) == want:
-                role, detail = "spool", f"spool #{spool_id}"
+                role, detail = "spool", self._spool_desc(spool_id)
         return role, detail
 
     def tag_role_detail(self) -> tuple[str, str]:
@@ -328,7 +339,8 @@ class SpoolTapFlows:
         if spool_id is not None:
             self._mod_load(spool_id)
             self._set_status(
-                "Info", f"Opened spool #{spool_id} in Modify — edit below, then Save."
+                "Info",
+                f"Opened {self._spool_desc(spool_id)} in Modify — edit below, then Save.",
             )
         else:
             self._set_status(
@@ -383,7 +395,8 @@ class SpoolTapFlows:
             return
         self.busy = True
         self.assign_result = "Working"
-        self._set_status("Working", f"Assigning spool #{spool_id} → {disp}…")
+        desc = self._spool_desc(spool_id)
+        self._set_status("Working", f"Assigning {desc} → {disp}…")
         self._notify()
         try:
             await self.coordinator.relocate_assign(
@@ -400,7 +413,8 @@ class SpoolTapFlows:
         self.assign_result = "Success"
         self._set_status(
             "Success",
-            f"Spool #{spool_id} → {disp}. The tray auto-configures when the printer is online.",
+            f"Assigned {desc} → {disp}. "
+            "The tray auto-configures when the printer is online.",
         )
         self._clear_pending()
         self._notify()
@@ -419,13 +433,12 @@ class SpoolTapFlows:
             )
             self._notify()
             return
-        spool = (self.coordinator.data or {}).get(spool_id)
-        display = spool.display_name if spool else f"#{spool_id}"
+        desc = self._spool_desc(spool_id)
         if self.busy:
             return
         self.busy = True
         self.assign_result = "Working"
-        self._set_status("Working", f"Assigning {display} (#{spool_id}) → {slot['label']}…")
+        self._set_status("Working", f"Assigning {desc} → {slot['label']}…")
         self._notify()
         try:
             await self.coordinator.relocate_assign(
@@ -446,7 +459,7 @@ class SpoolTapFlows:
         self.assign_result = "Success"
         self._set_status(
             "Success",
-            f"{display} (#{spool_id}) → {slot['label']}. "
+            f"Assigned {desc} → {slot['label']}. "
             "The tray auto-configures when the printer is online.",
         )
         self._clear_pending()
