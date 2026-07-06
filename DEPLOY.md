@@ -22,8 +22,9 @@ is read.
   on. This toggle is Bambuddy's own consumption sync — it is *not* the Spoolman service, so
   turning it off does not disturb any separate Spoolman you may run.
 - Home Assistant **2025.6.0+**.
-- For the dashboard's styling: **Mushroom** + **card-mod** (HACS → Frontend). These are the
-  only pieces HACS can't bundle with the integration.
+- For the dashboard's styling: **button-card** + **card-mod** (HACS → Frontend). These are
+  the only pieces HACS can't bundle with the integration. *(Pre-0.3.0 dashboards used
+  Mushroom instead of button-card; Mushroom is no longer required.)*
 
 ## Install
 
@@ -98,6 +99,25 @@ from the certified value.
 **Reconciliation marker.** Each weigh stamps `last_weighed_at`. After a full weigh-pass, any *active*
 spool still showing `last_weighed_at = null` is one you never physically handled → an archive
 shortlist candidate.
+
+---
+
+## Upgrading to 0.3.0 (glass dashboard + restructured status sensor)
+
+1. Install **button-card** from HACS → Frontend if you don't have it (card-mod you already
+   have; Mushroom is no longer used by the shipped dashboard and may be removed unless
+   something else on your instance uses it).
+2. HACS → update SpoolTap → **restart Home Assistant**.
+3. Run the `spooltap.install_dashboard` service with `force: true` once — the auto-install
+   never overwrites an existing dashboard, so the new layout only lands when you ask for it.
+
+**Breaking change — `sensor.spooltap_status`:** its state used to be the status *message*;
+since 0.3.0 the state is the status **level** — one of `Idle / Ready / Armed / Working /
+Success / Warning / Error / Info` — and the message moved to the `message` attribute
+(alongside `updated_at` and `busy`). If you templated on the old state, read
+`state_attr('sensor.spooltap_status', 'message')` instead; if you want to react to
+outcomes, trigger on the state itself (e.g. `to: "Error"`). The shipped dashboard was the
+only known consumer and is updated in the same release.
 
 ---
 

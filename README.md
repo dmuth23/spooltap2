@@ -21,8 +21,13 @@ native inventory.
   slot, and Bambuddy configures the tray (profile, colour, pressure advance) when the printer
   is reachable. Dropdown fallback for when you don't have the phone in hand.
 - **Auto-installed dashboard** — a full SpoolTap dashboard appears in your sidebar on first
-  setup. Four areas: **Assign · Bind · Modify · Spools**, with a status card that reports
-  every action outcome-first (✅ / ⚠️ / ⏱).
+  setup: a dark "glass cockpit" layout with four areas (**Assign · Bind · Modify · Spools**),
+  a live AMS slot strip, a color-swatch inventory with remaining-filament bars, and a status
+  banner that color-codes every outcome (green success · amber armed/warning · red failure).
+- **Automatable status** — the state of `sensor.spooltap_status` is a level
+  (`Idle · Ready · Armed · Working · Success · Warning · Error · Info`) with the human
+  message and an `updated_at` freshness stamp in its attributes, so your own automations
+  can route on outcomes (e.g. notify on `Error`).
 - **Bind** — register an NFC tag to a spool or to an AMS slot, by scan or by picker. Includes
   a live slot table showing which slots have tags bound.
 - **Modify / weight recertification** — load a spool (tap or picker), relabel, archive, or
@@ -52,8 +57,9 @@ native inventory.
   host, with its **Spoolman sync OFF** (Bambuddy → Settings → Filament). SpoolTap uses
   Bambuddy's native inventory + tag path; it raises a notification if the sync is on.
 - Home Assistant **2025.6+**.
-- For the dashboard styling: the HACS frontend cards **Mushroom** and **card-mod**
-  (both one-click installs from HACS → Frontend).
+- For the dashboard styling: the HACS frontend cards **button-card** and **card-mod**
+  (both one-click installs from HACS → Frontend). *(Before v0.3.0 the dashboard used
+  Mushroom instead of button-card — Mushroom is no longer required.)*
 - A phone that can read NFC tags into Home Assistant (the HA companion app), plus NFC tags
   for your spools and AMS slots.
 
@@ -67,7 +73,7 @@ HACS default store yet, so the custom-repository step is required for now.)
 
 Install **SpoolTap**, then **restart Home Assistant**.
 
-While you're in HACS, also install **Mushroom** and **card-mod** (HACS → Frontend) — the
+While you're in HACS, also install **button-card** and **card-mod** (HACS → Frontend) — the
 dashboard uses them for its styling.
 
 ### 2. Connect it to Bambuddy
@@ -102,7 +108,8 @@ printer is reachable. You're live.
 | Notification about **Spoolman sync being ON** | Turn it off in Bambuddy → Settings → Filament. That toggle is Bambuddy's own consumption sync — turning it off does not disturb a separate Spoolman install. |
 | Dashboard missing / broken / deleted | Run the `spooltap.install_dashboard` service with `force: true` — it restores the shipped layout. |
 | Scans do nothing | Confirm the HA companion app fires `tag_scanned` (Settings → Tags shows the scans), and check the status card — unknown tags say so and point you to Bind mode. |
-| Dashboard looks unstyled | Install **Mushroom** and **card-mod** from HACS → Frontend, then refresh the browser. |
+| Dashboard looks unstyled / cards say "Custom element doesn't exist" | Install **button-card** and **card-mod** from HACS → Frontend, then refresh the browser. |
+| Dashboard still shows the old (pre-0.3.0) layout after updating | The auto-install never overwrites an existing dashboard — run `spooltap.install_dashboard` with `force: true` once. |
 
 **Upgrading from 0.1.x, or running alongside SpoolTap V1?** See **[DEPLOY.md](DEPLOY.md)**.
 

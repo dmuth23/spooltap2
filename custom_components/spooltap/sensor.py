@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
@@ -14,7 +14,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN
 from .coordinator import SpoolTapCoordinator
 from .entity import SpoolTapFlowEntity, SpoolTapSpoolEntity
-from .flows import SpoolTapFlows
+from .flows import STATUS_LEVELS, SpoolTapFlows
 
 
 async def async_setup_entry(
@@ -79,7 +79,27 @@ class SlotsSensor(CoordinatorEntity[SpoolTapCoordinator], SensorEntity):
 
 
 class StatusSensor(SpoolTapFlowEntity, SensorEntity):
-    """The workflow's last human status line (was input_text.stv2_status)."""
+    """The workflow status.
+
+    v0.3.0 restructure: the STATE is the level (an enum from STATUS_LEVELS) so
+    dashboards/automations can color and route on it; the human message lives in the
+    `message` attribute (no 255-char state limit), with `updated_at` for freshness.
+    (Pre-0.3.0 the state was the message itself.)
+    """
+
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = STATUS_LEVELS
+
+    _LEVEL_ICONS = {
+        "Idle": "mdi:message-outline",
+        "Ready": "mdi:gesture-tap",
+        "Armed": "mdi:crosshairs-gps",
+        "Working": "mdi:progress-clock",
+        "Success": "mdi:check-circle",
+        "Warning": "mdi:alert",
+        "Error": "mdi:alert-octagon",
+        "Info": "mdi:message-text",
+    }
 
     def __init__(self, flows: SpoolTapFlows) -> None:
         super().__init__(
@@ -92,7 +112,20 @@ class StatusSensor(SpoolTapFlowEntity, SensorEntity):
 
     @property
     def native_value(self) -> StateType:
-        return self._flows.status[:255] or None
+        return self._flows.status_level
+
+    @property
+    def icon(self) -> str:
+        return self._LEVEL_ICONS.get(self._flows.status_level, "mdi:message-text")
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        updated = self._flows.status_updated
+        return {
+            "message": self._flows.status or None,
+            "updated_at": updated.isoformat() if updated else None,
+            "busy": self._flows.busy,
+        }
 
 
 class AssignResultSensor(SpoolTapFlowEntity, SensorEntity):
@@ -219,4 +252,8 @@ class InventorySpoolSensor(SpoolTapSpoolEntity, SensorEntity):
             "nozzle_temp_min": spool.nozzle_temp_min,
             "nozzle_temp_max": spool.nozzle_temp_max,
             "assigned_slot": spool.assigned_slot,
+            # raw ids so dashboards can join against the slots sensor's `key`
+            # ('<ams>_<tray>') — assigned_slot's display form doesn't match labels
+            "assigned_ams_id": spool.assigned_ams_id,
+            "assigned_tray_id": spool.assigned_tray_id,
         }
